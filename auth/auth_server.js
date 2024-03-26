@@ -44,6 +44,8 @@ function postSignup(req,res){
 }
 const db_link="your_database_link";
 
+
+// to connect to the mongodb server
 mongoose.connect(db_link)
 .then(function(db){
     console.log(db);
@@ -53,11 +55,13 @@ mongoose.connect(db_link)
     console.log(err);
 });
 
+
+//* creating a userschemma/scheema  for the mongodb to store the data in the database
 const userSceema= mongoose.Schema({
-    name:{
-        type:String,
-        required:true,
-        unique:true,
+    name:{//* the object in the data scheema
+        type:String,// type here is string
+        required:true,// the bool variable to make any object required withaout it we cant store the data
+        unique:true,// uniqueness like no one can user the same name of variable 
     },
     email:{
         type:String,
@@ -72,19 +76,25 @@ const userSceema= mongoose.Schema({
     confirmPassword:{
         type:String,
         required:true,
-        min:8,
+        minLength:8,// the password should be of minimum length 8
     }
 });
 
-const userModel=mongoose.model('userModel',userSceema);
+//* to use that scheema we have to create the model 
+const userModel=mongoose.model('userModel',userSceema);// by using the .model property of the mongeese we can create the model this property takes two parameter. 
+// the first is the name of the model and second is the is to tell that by which we are creating this model or what is the base of the model that is the scheema.
+// in simple language we can say that by which design we have to create the car/model
 
+//! by this we are creating the user manually to check the functionality of the mongodb after that we will do these things from the frontend of web/app
 (async function createUser(){
     let user={
         name:"Upadhyay",
         email:"upadhyay12@gmail.com",
         password:"123456987",
         confirmPassword:"123456987",
-    }
+    } // by using the create property we are creating the user on the database(mongodb) and create property will take the object which it will store in the database here the userdata(user)
     let data= await userModel.create(user);
     console.log(data);
-})();
+})();//* by wrapping the whole function in ()(); these bracket it means we are making the function emiziate invoked function instead of calling this function 
+
+//TODO: after successfully creatin/storing the data in the mongodb the mongo will automatically assign the unique id to the object and when we will console the data we can see that this unique id.

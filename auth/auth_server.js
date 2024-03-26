@@ -1,3 +1,4 @@
+// the mogodb configuration and creating/storing the user in database (mongodb)
 const express=require('express');
 
 //* requiring the mongoose database

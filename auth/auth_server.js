@@ -74,7 +74,7 @@ async function postSignup(req,res){
 }
 
 
-const db_link="mongodb+srv://admin:o6uYWVkRtGrVZ4K0@cluster0.1jt8mt9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const db_link="your database link";
 
 
 // to connect to the mongodb server

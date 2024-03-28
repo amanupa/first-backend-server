@@ -1,35 +1,39 @@
 // the mogodb configuration and creating/storing the user in database (mongodb)
-//! perform the CRUD operation on mongob database 
-const express=require('express');
 
+const express=require('express');
+const emailValidator= require('email-validator');// third party libraries to validate the email we can also use the regix or regular expression to validate the email
 //* requiring the mongoose database
 const mongoose=require('mongoose');
-
 const app=express();
+
 //! act as middleware for post function , it is used when data is comming from the frontend to the server so it is used to convert the data in the form of json
+app.use(express.json());//* it is used to convert the json data into the form of javascript objects, it is global middleware function
 
 //app.use(express.urlencoded({extended: true}));
-app.use(express.json());//* it is used to convert the json data into the form of javascript objects, it is global middleware function
+
+//* listioning the server on the port 3000
 app.listen(3000);
+
+
 /*let users=[
     {'id':1,'name':"aman"},
     {'id':2,'name':"anand"},
     {'id':3,'name':'anupam'},
 ];*/
 
-//mini app
+//* creating a variable of Router
 const userRouter=express.Router();
 const authRouter=express.Router();
-//base route , router to use
+
+//*base route , router to use
 app.use('/users',userRouter);
 app.use('/auth',authRouter);
 
-userRouter
-.route("/")
-.get(getUsers);
 
 // TODO: the get/post/patch and delete are the path specific middleware functions 
-
+userRouter
+.route("/")
+.get(getUsers);// passing the functions name according to their request(get,post,patch)
 
 authRouter
 .route('/signup')
@@ -44,6 +48,7 @@ function middleware(req,res,next){//the middleware function
     console.log("middleware encountered");
     next();
 }
+
 /*userRouter
 .route('/:id')
 .get(getUserById);*/
@@ -55,12 +60,13 @@ function middleware(req,res,next){//the middleware function
 })*/
 
 
-
+//* get signup function 
  function getSignup(req,res){
 
     console.log("after middleware this function encoutered");
     res.sendFile('./view/auth.html',{root:__dirname});
 }
+
 //* to create new user/(store the data in the database of the new user ) 
 async function postSignup(req,res){
     let dataObj=req.body;
@@ -73,11 +79,11 @@ async function postSignup(req,res){
     })
 }
 
+//* creating a variable to store the database link
+const db_link="your_database_link";
 
-const db_link="your database link";
 
-
-// to connect to the mongodb server
+//* to connect to the mongodb server
 mongoose.connect(db_link)
 .then(function(db){
     console.log(db);
@@ -87,7 +93,7 @@ mongoose.connect(db_link)
     console.log(err);
 });
 
-
+//Todo userSceema
 //* creating a userschemma/scheema  for the mongodb to store the data in the database
 const userSceema= mongoose.Schema({
     name:{//* the object in the data scheema
@@ -99,6 +105,9 @@ const userSceema= mongoose.Schema({
         type:String,
         required:true,
         unique:true,
+        validate:function(){//* validator function to validation  
+            return emailValidator.validate(this.email);//* here we are using the emailvalidator a third party librraries
+        }
     },
     password:{
         type:String,
@@ -109,9 +118,30 @@ const userSceema= mongoose.Schema({
         type:String,
         required:true,
         minLength:8,// the password should be of minimum length 8
+        validate:function(){//validator function to validate  the password and confirm password
+            return this.confirmPassword==this.password;
+        }
     }
 });
 
+//Todo Hooks 
+// ! here it does not matter the sequence of the pre and post hook the post hook will run after the all pre hooks completly run 
+//! if we write the post hook above the pre hook (according to the top to bottom manner it  should run the post before the pre but no) first it will run all the pre hooks complitely then it will run the post hook
+userSceema.pre('save',function(){//* it have two functionality 1. save and 2. remove (explore)
+    console.log("before saving in db",this);// by using this we can access/see the data that going frontend to backend before saving in the database , here is version is not available in the data only id is available
+})
+
+userSceema.post('save',function(doc){
+    console.log("after saving in db",doc);//by using the doc we can access the data that saved in the database with the version (__V:0)
+})
+
+
+//! Hook for dont save the confirm password in the database because it takes memory and we allready add the validator to check that the password and confirmpassword is same or not
+userSceema.pre('save',function(){
+    return this.confirmPassword=undefined;
+})
+
+//Todo userModel
 //* to use that scheema we have to create the model 
 const userModel=mongoose.model('userModel',userSceema);// by using the .model property of the mongeese we can create the model this property takes two parameter. 
 // the first is the name of the model and second is the is to tell that by which we are creating this model or what is the base of the model that is the scheema.
@@ -157,12 +187,34 @@ async function updateUser(req,res){
     })
 }
 
-//* to delete the data from the mongodb database
-
-async function deleteUser(req,res){
-    let user= await userModel.findOneAndDelete({email:"asdf@gmail.com"})
+//* to delete the data from the mongodb database by passing specific email in the function
+/*async function deleteUser(req,res){
+    let user= await userModel.findOneAndDelete({email:"kumar@gmail.com"})
     res.json({
         message:"data deleted successfully",
         data:user
     })
+}*/
+
+//* function to delete the data from backend by using the request body instead of hard code email in function like above
+async function deleteUser(req, res) {
+    try {
+        const { email } = req.body; // Extracting email from request body
+        if (!email) {
+            return res.status(400).json({ message: "Email address is required" });
+        }
+
+        let user = await userModel.findOneAndDelete({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "Data deleted successfully",
+            data: user
+        });
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 }
